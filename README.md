@@ -2,7 +2,11 @@
 
 ### Instant wireless file transfer between devices on the same Wi-Fi
 
-Transfer files between your phone and computer directly over Wi-Fi — no cables, cloud uploads, accounts, or extra apps required.
+![Python](https://img.shields.io/badge/Python-3.7%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+
+Transfer files instantly between devices directly over Wi-Fi — no cables, cloud uploads, accounts, or extra apps required.
 
 Built with pure Python and a sleek responsive web interface that works on desktop and mobile browsers.
 
@@ -27,7 +31,9 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 
 ---
 
-# 📸 Preview
+# 📸 Preview & Screenshots
+
+## Console Interface
 
 ```text
 ╔══════════════════════════════════════╗
@@ -40,7 +46,6 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 ║ on your phone (same Wi-Fi required)  ║
 ╚══════════════════════════════════════╝
 ```
-# 📸 Screenshots
 
 ## Web UI
 
@@ -164,8 +169,10 @@ Anyone connected to the same network can access the transfer page while the serv
 ```text
 LocalShare/
 │
+├── assets/
+│   └── desktop.png
 ├── server.py
-├── README.md 
+├── README.md
 └── LICENSE
 ```
 
@@ -226,7 +233,6 @@ All transfers remain entirely inside your local network.
 
 ---
 
-
 # 🛑 Stop the Server
 
 Press:
@@ -237,7 +243,8 @@ CTRL + C
 
 inside the terminal.
 
-or close the Desktop's browser
+or close the localhost browser tab to auto-stop the server.
+
 ---
 
 # ⭐ Why LocalShare?
@@ -251,7 +258,7 @@ Most file-sharing solutions require:
 
 LocalShare avoids all of that.
 
-Just run one Python file and transfer instantly.
+Run one Python file, open the QR code, and start transferring instantly.
 
 ---
 
