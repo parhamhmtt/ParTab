@@ -160,8 +160,8 @@ Anyone connected to the same network can access the transfer page while the serv
 LocalShare/
 │
 ├── server.py
-├── uploads/
-└── README.md
+├── README.md 
+└── LICENSE
 ```
 
 ---
