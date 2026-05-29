@@ -1,7 +1,8 @@
-# LocalShare 📡  
-### Instant Wireless File Transfer Between mobile devices & Windows
+# LocalShare 📡
 
-Transfer files between your mobile device and Windows PC directly over Wi-Fi — no cables, no cloud uploads, no third-party apps.
+### Instant wireless file transfer between devices on the same Wi-Fi
+
+Transfer files between your phone and computer directly over Wi-Fi — no cables, cloud uploads, accounts, or extra apps required.
 
 Built with pure Python and a sleek responsive web interface that works on desktop and mobile browsers.
 
@@ -9,22 +10,24 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 
 ## ✨ Features
 
-- ⚡ **Instant local transfer** over your home Wi-Fi
-- 📱 **Works directly in Safari / browser**
-- 📂 **Multi-file upload support**
-- 📊 **Real-time upload progress**
-- 🖥️ **Beautiful responsive UI**
-- ⬇️ **One-click file downloads**
-- 🗑️ **Delete files from the browser**
-- 🔄 **Auto-refreshing file list**
-- 🧩 **Zero external dependencies**
-- 🐍 **Single Python file**
+* ⚡ Instant local file transfer over Wi-Fi
+* 📱 Works directly in Safari, Chrome, Edge, and Firefox
+* 🖥️ Responsive desktop & mobile interface
+* 📂 Multi-file upload support
+* 🖱️ Drag & drop uploads
+* 📊 Real-time upload progress
+* 📷 Built-in QR code for instant mobile access
+* ⬇️ One-click file downloads
+* 🗑️ Delete files directly from the browser
+* 🔄 Auto-refreshing file list
+* 💤 Auto-shutdown when browser tab closes
+* 🌐 Works across Windows, macOS, Linux, iPhone, and Android
+* 🐍 Single Python file
+* 🔒 Fully local — no internet required after startup
 
 ---
 
 # 📸 Preview
-
-Open the generated local URL on your phone and start transferring instantly.
 
 ```text
 ╔══════════════════════════════════════╗
@@ -33,8 +36,8 @@ Open the generated local URL on your phone and start transferring instantly.
 ║ Local  →  http://localhost:8889      ║
 ║ Mobile →  http://192.168.1.42:8889   ║
 ╠══════════════════════════════════════╣
-║ Open the Mobile URL on your iPhone   ║
-║ (same Wi-Fi required)                ║
+║ Scan the QR code or open the URL     ║
+║ on your phone (same Wi-Fi required)  ║
 ╚══════════════════════════════════════╝
 ```
 
@@ -44,11 +47,16 @@ Open the generated local URL on your phone and start transferring instantly.
 
 ## 1 · Requirements
 
-- Python **3.7+**
-- mobile and PC connected to the **same Wi-Fi network**
+* Python 3.7+
+* `psutil`
 
-Download Python from:  
-https://www.python.org
+Install dependency:
+
+```bash
+pip install psutil
+```
+
+Make sure your devices are connected to the same Wi-Fi network.
 
 ---
 
@@ -79,14 +87,32 @@ The browser opens automatically.
 
 # 📱 Using LocalShare
 
-## Upload Files 
+## Connect from Your Phone
 
-1. Open the **URL** shown in your web browser
-2. Tap **“Choose Files”**
+After starting the server:
+
+* Scan the QR code shown in the browser
+  OR
+* Open the displayed Mobile URL manually
+
+Example:
+
+```text
+http://192.168.1.42:8889
+```
+
+---
+
+## Upload Files
+
+1. Open LocalShare on your phone
+2. Tap “Choose Files”
 3. Select photos, videos, or documents
-4. Tap **Upload Files**
+4. Tap “Upload Files”
 
-Uploaded files appear in:
+You can also drag & drop files from desktop browsers.
+
+Uploaded files are saved in:
 
 ```text
 /uploads
@@ -94,11 +120,37 @@ Uploaded files appear in:
 
 ---
 
-## Download Files 
+## Download Files
 
-All uploaded files are listed in the web interface.
+All uploaded files appear instantly in the web interface.
 
-Simply tap the ⬇ download button beside any file.
+Tap the ⬇ download button beside any file.
+
+---
+
+# 🌐 Browser Support
+
+Tested on:
+
+* Safari (iPhone/iPad)
+* Chrome
+* Edge
+* Firefox
+
+---
+
+# 🔐 Privacy & Security
+
+* No cloud services
+* No analytics
+* No tracking
+* No external servers
+* Files never leave your local Wi-Fi network
+
+Note:
+
+LocalShare is intended for trusted/private networks.
+Anyone connected to the same network can access the transfer page while the server is running.
 
 ---
 
@@ -107,8 +159,8 @@ Simply tap the ⬇ download button beside any file.
 ```text
 LocalShare/
 │
-├── server.py          # Main server application
-├── uploads/           # Uploaded files are stored here
+├── server.py
+├── uploads/
 └── README.md
 ```
 
@@ -116,7 +168,7 @@ LocalShare/
 
 # ⚙️ Configuration
 
-You can customize the port and upload location at the top of `server.py`.
+You can customize the port and upload location near the top of `server.py`.
 
 ```python
 PORT = 8889
@@ -126,9 +178,9 @@ UPLOAD_DIR = Path(__file__).parent / "uploads"
 
 ---
 
-# 🔥 Cant reach the page ? →  Windows Firewall Fix
+# 🔥 Can't Reach the Page?
 
-If your phone cannot connect, Windows Firewall may be blocking the server.
+Windows Firewall may block incoming connections.
 
 Run PowerShell as Administrator:
 
@@ -146,19 +198,22 @@ netsh advfirewall firewall delete rule name="LocalShare"
 
 # 🛠 Troubleshooting
 
-| Problem | Solution |
-|---|---|
-| Phone can't connect | Make sure both devices are on the same Wi-Fi |
-| URL shows `127.0.0.1` | Disable VPN and restart the server |
-| `python server.py` not found | Use `python3 server.py` |
-| Upload failed | Check firewall settings |
-| Port already in use | The app automatically finds another free port |
+| Problem                      | Solution                                    |
+| ---------------------------- | ------------------------------------------- |
+| Phone can't connect          | Make sure both devices use the same Wi-Fi   |
+| QR code doesn't open page    | Try opening the Mobile URL manually         |
+| URL shows `127.0.0.1`        | Disable VPN and restart the server          |
+| `python server.py` not found | Use `python3 server.py`                     |
+| Upload failed                | Check firewall settings                     |
+| Port already in use          | LocalShare automatically finds another port |
 
 ---
 
 # 🧠 How It Works
 
-LocalShare runs a lightweight HTTP server on your computer and exposes a clean web interface accessible from any device on the same local network.
+LocalShare starts a lightweight HTTP server on your computer and exposes a private web interface over your local network.
+
+Any device connected to the same Wi-Fi can open the generated URL in a browser and instantly upload or download files.
 
 No internet connection is required after startup.
 
@@ -166,24 +221,15 @@ All transfers remain entirely inside your local network.
 
 ---
 
-# 🔒 Privacy
+# 🚧 Roadmap
 
-- No cloud services
-- No analytics
-- No tracking
-- No external servers
-- Files never leave your Wi-Fi network
-
----
-
-# 🧩 Built With
-
-- Python standard library
-- HTML/CSS/JavaScript
-- `http.server`
-- `socketserver`
-
-No frameworks. No dependencies.
+* [ ] Password protection
+* [ ] End-to-end encryption
+* [ ] Upload progress per-file
+* [ ] File previews
+* [ ] Standalone Windows executable
+* [ ] Drag-to-sort uploads
+* [ ] Multiple upload folders
 
 ---
 
@@ -192,10 +238,10 @@ No frameworks. No dependencies.
 Press:
 
 ```text
-CTRL + C 
+CTRL + C
 ```
 
-in the terminal.
+inside the terminal.
 
 ---
 
@@ -203,10 +249,10 @@ in the terminal.
 
 Most file-sharing solutions require:
 
-- installing apps
-- creating accounts
-- uploading to the cloud
-- using cables
+* installing apps
+* creating accounts
+* cloud uploads
+* USB cables
 
 LocalShare avoids all of that.
 
