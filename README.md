@@ -40,6 +40,11 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 ║ on your phone (same Wi-Fi required)  ║
 ╚══════════════════════════════════════╝
 ```
+# 📸 Screenshots
+
+## Web UI
+
+![Desktop UI](assets/desktop.png)
 
 ---
 
