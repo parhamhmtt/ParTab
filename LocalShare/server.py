@@ -258,6 +258,8 @@ HTML_PAGE = r"""<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LocalShare</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='10' fill='%235cffb1'/><path d='M22 8L10 14l12 6 12-6-12-6z' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/><path d='M10 26l12 6 12-6' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/><path d='M10 20l12 6 12-6' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #0d0f14;
@@ -577,6 +579,76 @@ HTML_PAGE = r"""<!DOCTYPE html>
       white-space: nowrap;
       color: var(--text);
     }
+
+    #qr-wrap {
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    #qr-box {
+      width: 72px;
+      height: 72px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,.4);
+      transition: transform .15s;
+    }
+
+    #qr-box:hover { transform: scale(1.05); }
+    #qr-box canvas, #qr-box img { width: 100% !important; height: 100% !important; }
+
+    #qr-label {
+      text-align: center;
+      font-size: .58rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    /* Full-size QR popup on click */
+    #qr-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      display: none;
+      place-items: center;
+      z-index: 1000;
+      cursor: pointer;
+    }
+
+    #qr-overlay.open { display: grid; }
+
+    #qr-popup {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: pop-in .2s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    #qr-popup-label {
+      font-family: var(--font-display);
+      font-size: .8rem;
+      color: #333;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+
+    @keyframes pop-in {
+      from { transform: scale(.8); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -596,7 +668,18 @@ HTML_PAGE = r"""<!DOCTYPE html>
         __SERVER_URL__
       </div>
     </div>
+    <div id="qr-wrap" onclick="document.getElementById('qr-overlay').classList.add('open')" title="Click to enlarge">
+      <div id="qr-box"></div>
+    </div>
   </header>
+
+  <!-- Full-size QR popup -->
+  <div id="qr-overlay" onclick="this.classList.remove('open')">
+    <div id="qr-popup" onclick="event.stopPropagation()">
+      <div id="qr-popup-canvas"></div>
+      <div id="qr-popup-label">__SERVER_URL__</div>
+    </div>
+  </div>
 
   <div id="dropzone">
     <input type="file" id="file-input" multiple accept="*/*">
@@ -836,9 +919,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
       pollInterval = setInterval(loadFiles, 5000);
     }
 
-    // Heartbeat — only runs on the PC (localhost).
-    // Pings every 10s; also pings immediately when tab becomes visible again.
-    // Server shuts down if no ping for 90s (covers browser background throttling).
+
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
       setInterval(() => {
         fetch('/ping').catch(() => {});
@@ -852,6 +933,26 @@ HTML_PAGE = r"""<!DOCTYPE html>
     }
 
     loadFiles();
+
+    const mobileUrl = document.getElementById('server-url').textContent.trim();
+
+    new QRCode(document.getElementById('qr-box'), {
+      text: mobileUrl,
+      width: 62,
+      height: 62,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    new QRCode(document.getElementById('qr-popup-canvas'), {
+      text: mobileUrl,
+      width: 220,
+      height: 220,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
   </script>
 
 <footer style="
