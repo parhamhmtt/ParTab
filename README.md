@@ -33,8 +33,8 @@ Open the generated local URL on your phone and start transferring instantly.
 ║ Local  →  http://localhost:8889      ║
 ║ Mobile →  http://192.168.1.42:8889   ║
 ╠══════════════════════════════════════╣
-║ Open the Mobile URL on your iPhone  ║
-║ (same Wi-Fi required)               ║
+║ Open the Mobile URL on your iPhone   ║
+║ (same Wi-Fi required)                ║
 ╚══════════════════════════════════════╝
 ```
 
