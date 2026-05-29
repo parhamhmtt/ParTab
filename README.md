@@ -221,17 +221,6 @@ All transfers remain entirely inside your local network.
 
 ---
 
-# 🚧 Roadmap
-
-* [ ] Password protection
-* [ ] End-to-end encryption
-* [ ] Upload progress per-file
-* [ ] File previews
-* [ ] Standalone Windows executable
-* [ ] Drag-to-sort uploads
-* [ ] Multiple upload folders
-
----
 
 # 🛑 Stop the Server
 
@@ -243,6 +232,7 @@ CTRL + C
 
 inside the terminal.
 
+or close the Desktop's browser
 ---
 
 # ⭐ Why LocalShare?
