@@ -1,10 +1,10 @@
-# LocalShare 📡
+# ParTab 🛸
 
 ### Instant wireless file transfer between devices on the same Wi-Fi
 
 ![Python](https://img.shields.io/badge/Python-3.7%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey)
 
 Transfer files instantly between devices directly over Wi-Fi — no cables, cloud uploads, accounts, or extra apps required.
 
@@ -37,7 +37,7 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 
 ```text
 ╔══════════════════════════════════════╗
-           LocalShare  🚀
+             ParTab  🛸
 ╠══════════════════════════════════════╣
 ║ Local  →  http://localhost:8889      ║
 ║ Mobile →  http://192.168.1.42:8889   ║
@@ -73,8 +73,8 @@ Make sure your devices are connected to the same Wi-Fi network.
 ## 2 · Clone the Repository
 
 ```bash
-git clone https://github.com/parhamhmtt/localshare.git
-cd localshare
+git clone https://github.com/parhamhmtt/ParTab.git
+cd ParTab
 ```
 
 ---
@@ -95,7 +95,7 @@ The browser opens automatically.
 
 ---
 
-# 📱 Using LocalShare
+# 📱 Using ParTab
 
 ## Connect from Your Phone
 
@@ -115,7 +115,7 @@ http://192.168.1.42:8889
 
 ## Upload Files
 
-1. Open LocalShare on your phone
+1. Open ParTab on your phone
 2. Tap “Choose Files”
 3. Select photos, videos, or documents
 4. Tap “Upload Files”
@@ -159,7 +159,7 @@ Tested on:
 
 Note:
 
-LocalShare is intended for trusted/private networks.
+ParTab is intended for trusted/private networks.
 Anyone connected to the same network can access the transfer page while the server is running.
 
 ---
@@ -167,10 +167,12 @@ Anyone connected to the same network can access the transfer page while the serv
 # 📂 Project Structure
 
 ```text
-LocalShare/
+ParTab/
 │
 ├── assets/
-│   └── desktop.png
+│   ├── desktop.png
+│   └── logo.png
+│
 ├── server.py
 ├── README.md
 └── LICENSE
@@ -197,13 +199,13 @@ Windows Firewall may block incoming connections.
 Run PowerShell as Administrator:
 
 ```powershell
-netsh advfirewall firewall add rule name="LocalShare" dir=in action=allow protocol=TCP localport=8889
+netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=8889
 ```
 
 Remove the rule later:
 
 ```powershell
-netsh advfirewall firewall delete rule name="LocalShare"
+netsh advfirewall firewall delete rule name="ParTab"
 ```
 
 ---
@@ -217,13 +219,13 @@ netsh advfirewall firewall delete rule name="LocalShare"
 | URL shows `127.0.0.1`        | Disable VPN and restart the server          |
 | `python server.py` not found | Use `python3 server.py`                     |
 | Upload failed                | Check firewall settings                     |
-| Port already in use          | LocalShare automatically finds another port |
+| Port already in use          | ParTab automatically finds another port |
 
 ---
 
 # 🧠 How It Works
 
-LocalShare starts a lightweight HTTP server on your computer and exposes a private web interface over your local network.
+ParTab starts a lightweight HTTP server on your computer and exposes a private web interface over your local network.
 
 Any device connected to the same Wi-Fi can open the generated URL in a browser and instantly upload or download files.
 
@@ -247,7 +249,7 @@ or close the localhost browser tab to auto-stop the server.
 
 ---
 
-# ⭐ Why LocalShare?
+# ⭐ Why ParTab?
 
 Most file-sharing solutions require:
 
@@ -256,7 +258,7 @@ Most file-sharing solutions require:
 * cloud uploads
 * USB cables
 
-LocalShare avoids all of that.
+ParTab avoids all of that.
 
 Run one Python file, open the QR code, and start transferring instantly.
 
