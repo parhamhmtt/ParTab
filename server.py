@@ -1,7 +1,4 @@
-"""
-LocalShare — instant file transfer between iOS and Windows over Wi-Fi.
-Run this script, then open the displayed URL on your phone.
-"""
+
 
 import http.server
 import socketserver
