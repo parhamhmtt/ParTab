@@ -25,7 +25,7 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 * 🗑️ Delete files directly from the browser
 * 🔄 Auto-refreshing file list
 * 💤 Auto-shutdown when browser tab closes
-* 🌐 Works across Windows, macOS, Linux, iPhone, and Android
+* 🌐 Works across Windows, Linux, iPhone, and Android
 * 🐍 Single Python file
 * 🔒 Fully local — no internet required after startup
 
