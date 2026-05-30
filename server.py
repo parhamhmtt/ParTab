@@ -1,5 +1,4 @@
 
-
 import http.server
 import socketserver
 import socket
@@ -25,7 +24,16 @@ def get_local_ipv4() -> str:
     try:
         for iface, addrs in psutil.net_if_addrs().items():
             name = iface.lower()
-            if any(x in name for x in ("wi-fi", "wifi", "wlan", "wireless")):
+
+            if any(x in name for x in (
+                    "wi-fi",
+                    "wifi",
+                    "wireless",
+                    "wlan",
+                    "wlp",
+                    "wlo",
+                    "wl"
+            )):
                 for a in addrs:
                     if a.family == socket.AF_INET:
                         return a.address
@@ -109,6 +117,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             elif path.startswith("/delete/"):
                 filename = urllib.parse.unquote(path[len("/delete/"):])
                 self._delete_file(filename)
+            elif path == "/assets/logo.png":
+                self._serve_asset("logo.png")
             elif path == "/ping":
                 client_ip = self.client_address[0]
                 if client_ip in ("127.0.0.1", "::1"):
@@ -123,6 +133,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
             except:
                 pass
 
+    def _serve_asset(self, filename):
+        asset = Path(__file__).parent / "assets" / filename
+
+        if not asset.exists():
+            self._not_found()
+            return
+
+        mime, _ = mimetypes.guess_type(str(asset))
+        mime = mime or "application/octet-stream"
+
+        data = asset.read_bytes()
+
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
     def do_POST(self):
         try:
             if self.path == "/upload":
@@ -254,16 +281,16 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LocalShare</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='10' fill='%235cffb1'/><path d='M22 8L10 14l12 6 12-6-12-6z' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/><path d='M10 26l12 6 12-6' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/><path d='M10 20l12 6 12-6' fill='none' stroke='%230d0f14' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <title>ParTab</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
-      --bg: #0d0f14;
+      --bg: #030408;
       --surface: #161920;
       --border: #252830;
-      --accent: #5cffb1;
-      --accent2: #4f9cff;
+      --accent: #00fff6;
+      --accent2: #00d9ff;
       --danger: #ff5c7a;
       --text: #e8eaf0;
       --muted: #6b7080;
@@ -293,19 +320,17 @@ HTML_PAGE = r"""<!DOCTYPE html>
       margin-bottom: 32px;
     }
 
-    .logo {
-      width: 44px;
-      height: 44px;
-      background: var(--accent);
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-    }
+.logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
 
-    .logo svg {
-      color: #0d0f14;
-    }
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 
     h1 {
       font-family: var(--font-display);
@@ -651,16 +676,12 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <body>
 
   <header>
-    <div class="logo">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-        <path d="M2 17l10 5 10-5"/>
-        <path d="M2 12l10 5 10-5"/>
-      </svg>
-    </div>
+   <div class="logo">
+  <img src="/assets/logo.png">
+</div>
     <div>
-      <h1>Local<span>Share</span></h1>
-      <div class="subtitle">iOS → Windows · same Wi-Fi</div>
+      <h1>Par<span>Tab</span></h1>
+      <div class="subtitle"> Mobile devices <-> PC · same Wi-Fi</div>
       <div class="subtitle" id="server-url" style="margin-top:4px; color:var(--accent); letter-spacing:.02em">
         __SERVER_URL__
       </div>
@@ -829,7 +850,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
         const files = await r.json();
 
         if (!files.length) {
-          fileListEl.innerHTML = '<div class="empty">No files yet. Upload something!</div>';
+          fileListEl.innerHTML = '<div class="empty">No files yet. ParTab something!</div>';
           return;
         }
 
@@ -975,7 +996,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
         Parhamhmtt
     </a>
     —
-    <span style="color:#ffffff;">Local</span><span style="color:#5cffb1;">Share</span>
+    <span style="color:#ffffff;">Par</span><span style="color:#00fff6;">Tab</span>
 </footer>
 </body>
 </html>"""
@@ -1007,7 +1028,7 @@ def main():
     webbrowser.open(f"http://localhost:{port}")
     print()
     print("  ╔══════════════════════════════════════╗")
-    print("             LocalShare  🚀              ")
+    print("               ParTab  🚀              ")
     print("  ╠══════════════════════════════════════╣")
     print(f"  ║ Local  →  http://localhost:{port}      ║")
     print(f"  ║ Mobile →  {url:<27}║")
