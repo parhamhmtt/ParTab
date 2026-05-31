@@ -16,7 +16,9 @@ import sys
 PORT = 8889
 url = ""
 last_ping = [None]
-UPLOAD_DIR = Path(sys.executable).parent / "uploads"
+
+BASE_DIR = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 def resource_path(relative):

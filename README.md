@@ -53,24 +53,11 @@ Built with pure Python and a sleek responsive web interface that works on deskto
 
 ---
 
-# 🚀 Quick Start
+## Quick Start
 
-## 1 · Requirements
+### 1 · Clone the Repository
 
-* Python 3.7+
-* `psutil`
-
-Install dependency:
-
-```bash
-pip install psutil
-```
-
-Make sure your devices are connected to the same Wi-Fi network.
-
----
-
-## 2 · Clone the Repository
+Download the project source code from GitHub.
 
 ```bash
 git clone https://github.com/parhamhmtt/ParTab.git
@@ -79,21 +66,39 @@ cd ParTab
 
 ---
 
-## 3 · Run the Server
+### 2 · Install Dependencies
+
+Install the required Python package.
 
 ```bash
-python server.py
+pip install -r requirements.txt
 ```
-
-If `python` doesn't work:
-
-```bash
-python3 server.py
-```
-
-The browser opens automatically.
 
 ---
+
+### 3 · Run ParTab
+
+Start the local file transfer server.
+
+```bash
+python ParTab.py
+```
+
+If `python` doesn't work on your system:
+
+```bash
+python3 ParTab.py
+```
+
+---
+
+### 4 · Open on Your Phone
+
+The browser opens automatically and displays a QR code.
+
+Scan the QR code or open the displayed Mobile URL from any device connected to the same Wi-Fi network.
+
+The browser opens automatically.
 
 # 📱 Using ParTab
 
@@ -171,23 +176,26 @@ ParTab/
 │
 ├── assets/
 │   ├── desktop.png
+│   ├── app.ico
 │   └── logo.png
 │
-├── server.py
+├── .gitignore
+├── requirements.txt
+├── LICENSE
 ├── README.md
-└── LICENSE
+└── server.py
 ```
 
 ---
 
 # ⚙️ Configuration
 
-You can customize the port and upload location near the top of `server.py`.
+You can customize the port and upload location near the top of `ParTab.py`.
 
 ```python
 PORT = 8889
 
-UPLOAD_DIR = Path(sys.executable).parent / "uploads"
+UPLOAD_DIR = "uploads/"
 ```
 
 ---
@@ -213,14 +221,14 @@ netsh advfirewall firewall delete rule name="ParTab"
 
 # 🛠 Troubleshooting
 
-| Problem                      | Solution                                    |
-| ---------------------------- | ------------------------------------------- |
-| Phone can't connect          | Make sure both devices use the same Wi-Fi   |
-| QR code doesn't open page    | Try opening the Mobile URL manually         |
-| URL shows `127.0.0.1`        | Disable VPN and restart the server          |
-| `python server.py` not found | Use `python3 server.py`                     |
-| Upload failed                | Check firewall settings                     |
-| Port already in use          | ParTab automatically finds another port |
+| Problem                      | Solution                                  |
+|------------------------------|-------------------------------------------|
+| Phone can't connect          | Make sure both devices use the same Wi-Fi |
+| QR code doesn't open page    | Try opening the Mobile URL manually       |
+| URL shows `127.0.0.1`        | Disable VPN and restart the server        |
+| `python ParTab.py` not found | Use `python3 ParTab.py`                   |
+| Upload failed                | Check firewall settings                   |
+| Port already in use          | ParTab automatically finds another port   |
 
 ---
 
