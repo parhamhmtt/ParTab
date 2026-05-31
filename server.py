@@ -1,4 +1,3 @@
-
 import http.server
 import socketserver
 import socket
@@ -12,13 +11,17 @@ import webbrowser
 import psutil
 import threading
 import time
+import sys
 
 PORT = 8889
 url = ""
 last_ping = [None]
-UPLOAD_DIR = Path(__file__).parent / "uploads"
+UPLOAD_DIR = Path(sys.executable).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+def resource_path(relative):
+    base = getattr(sys, '_MEIPASS', Path(__file__).parent)
+    return Path(base) / relative
 
 def get_local_ipv4() -> str:
     try:
@@ -134,8 +137,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 pass
 
     def _serve_asset(self, filename):
-        asset = Path(__file__).parent / "assets" / filename
-
+        asset = resource_path("assets") / filename
         if not asset.exists():
             self._not_found()
             return
@@ -150,6 +152,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
     def do_POST(self):
         try:
             if self.path == "/upload":
@@ -178,18 +181,31 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def _serve_file(self, filename):
         safe = Path(filename).name
         filepath = UPLOAD_DIR / safe
+
         if not filepath.exists():
             self._not_found()
             return
+
         mime, _ = mimetypes.guess_type(str(filepath))
         mime = mime or "application/octet-stream"
-        data = filepath.read_bytes()
+
+        size = filepath.stat().st_size
+
         self.send_response(200)
         self.send_header("Content-Type", mime)
-        self.send_header("Content-Length", str(len(data)))
-        self.send_header("Content-Disposition", f'attachment; filename="{html.escape(safe)}"')
+        self.send_header("Content-Length", str(size))
+        self.send_header(
+            "Content-Disposition",
+            f'attachment; filename="{html.escape(safe)}"'
+        )
         self.end_headers()
-        self.wfile.write(data)
+
+        with open(filepath, "rb") as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
 
     def _delete_file(self, filename):
         try:
@@ -215,9 +231,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._respond(400, "text/plain", b"Bad request")
             return
 
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
-
         boundary = None
         for part in content_type.split(";"):
             part = part.strip()
@@ -228,28 +241,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._respond(400, "text/plain", b"No boundary")
             return
 
+        boundary_bytes = ("--" + boundary).encode()
+        end_boundary = boundary_bytes + b"--"
+        length = int(self.headers.get("Content-Length", 0))
+
         saved = []
-        sep = ("--" + boundary).encode()
-        for chunk in body.split(sep)[1:]:
-            if chunk in (b"--\r\n", b"--", b""):
-                continue
-            if b"\r\n\r\n" not in chunk:
-                continue
-            raw_headers, file_body = chunk.split(b"\r\n\r\n", 1)
-            file_body = file_body.rstrip(b"\r\n")
-            headers_str = raw_headers.decode("utf-8", errors="replace")
+        buf = b""
+        current_file = None
+        current_dest = None
+        CHUNK = 65536
 
-            filename = None
-            for hline in headers_str.splitlines():
-                if "Content-Disposition" in hline and "filename=" in hline:
-                    for seg in hline.split(";"):
-                        seg = seg.strip()
-                        if seg.startswith("filename="):
-                            filename = seg[9:].strip('"').strip("'")
-                            break
-            if not filename or not file_body:
-                continue
-
+        def open_dest(filename):
             safe_name = Path(filename).name
             dest = UPLOAD_DIR / safe_name
             stem, suffix = dest.stem, dest.suffix
@@ -257,10 +259,81 @@ class Handler(http.server.BaseHTTPRequestHandler):
             while dest.exists():
                 dest = UPLOAD_DIR / f"{stem}_{counter}{suffix}"
                 counter += 1
+            return dest
 
-            dest.write_bytes(file_body)
-            saved.append(safe_name)
-            print(f"  ✔  Saved: {dest}  ({human_size(len(file_body))})")
+        bytes_read = 0
+        in_headers = False
+        headers_done = False
+        header_buf = b""
+
+        while bytes_read < length:
+            to_read = min(CHUNK, length - bytes_read)
+            chunk = self.rfile.read(to_read)
+            if not chunk:
+                break
+            bytes_read += len(chunk)
+            buf += chunk
+
+            while True:
+                if current_dest is None:
+                    idx = buf.find(boundary_bytes)
+                    if idx == -1:
+                        break
+                    buf = buf[idx + len(boundary_bytes):]
+
+                    if buf.startswith(b"--"):
+                        buf = b""
+                        break
+
+                    if buf.startswith(b"\r\n"):
+                        buf = buf[2:]
+
+                    hdr_end = buf.find(b"\r\n\r\n")
+                    if hdr_end == -1:
+                        break
+
+                    raw_headers = buf[:hdr_end].decode("utf-8", errors="replace")
+                    buf = buf[hdr_end + 4:]
+
+                    filename = None
+                    for hline in raw_headers.splitlines():
+                        if "Content-Disposition" in hline and "filename=" in hline:
+                            for seg in hline.split(";"):
+                                seg = seg.strip()
+                                if seg.startswith("filename="):
+                                    filename = seg[9:].strip('"').strip("'")
+                                    break
+                    if not filename:
+                        current_dest = None
+                        continue
+
+                    current_dest = open_dest(filename)
+                    current_file = open(current_dest, "wb")
+                else:
+                    idx = buf.find(boundary_bytes)
+                    if idx != -1:
+                        data = buf[:idx]
+                        if data.endswith(b"\r\n"):
+                            data = data[:-2]
+                        current_file.write(data)
+                        current_file.close()
+                        size = current_dest.stat().st_size
+                        print(f"  ✔  Saved: {current_dest}  ({human_size(size)})")
+                        saved.append(current_dest.name)
+                        current_file = None
+                        current_dest = None
+                        buf = buf[idx:]
+                    else:
+                        safe_len = len(buf) - len(boundary_bytes) - 2
+                        if safe_len > 0:
+                            current_file.write(buf[:safe_len])
+                            buf = buf[safe_len:]
+                        break
+
+        if current_file:
+            current_file.close()
+            if current_dest and current_dest.exists() and current_dest.stat().st_size == 0:
+                current_dest.unlink()
 
         self._respond(200, "application/json", json.dumps({"saved": saved}).encode())
 
@@ -608,7 +681,12 @@ HTML_PAGE = r"""<!DOCTYPE html>
       cursor: pointer;
       margin-left: auto;
     }
-
+    #qr-section{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-left:auto;
+    }
     #qr-box {
       width: 72px;
       height: 72px;
@@ -634,7 +712,6 @@ HTML_PAGE = r"""<!DOCTYPE html>
       text-transform: uppercase;
     }
 
-    /* Full-size QR popup on click */
     #qr-overlay {
       position: fixed;
       inset: 0;
@@ -671,6 +748,96 @@ HTML_PAGE = r"""<!DOCTYPE html>
       from { transform: scale(.8); opacity: 0; }
       to   { transform: scale(1);  opacity: 1; }
     }
+
+    #help-link {
+    font-size: .62rem;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+    cursor: pointer;
+     transition: color .15s;
+     user-select: none;
+    }
+
+    #help-link:hover {
+    color: var(--accent);
+    }
+
+    #help-overlay {
+    position: fixed;
+    inset: 0;
+     background: rgba(0,0,0,.75);
+    backdrop-filter: blur(6px);
+    display: none;
+    place-items: center;
+    z-index: 1200;
+    }
+
+    #help-overlay.open {
+     display: grid;
+    }
+
+    #help-popup {
+     width: min(92vw, 620px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+     line-height: 1.6;
+     color: var(--text);
+    font-size: .85rem;
+    }
+
+    #help-popup h3 {
+    margin-bottom: 14px;
+    color: var(--accent);
+    font-family: var(--font-display);
+    }
+
+    #help-popup .code-block {
+    position: relative;
+    margin: 12px 0;
+    }
+
+    #help-popup code {
+    display: block;
+    padding: 12px 44px 12px 12px;
+    background: #0d0f14;
+    border-radius: 10px;
+    overflow-x: auto;
+    color: var(--accent);
+    }
+
+    #help-popup .copy-btn {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 28px;
+    height: 28px;
+    background: #1e2130;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    transition: color .15s, border-color .15s;
+    padding: 0;
+    }
+
+    #help-popup .copy-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    }
+
+    #help-popup a {
+     color: var(--accent);
+    text-decoration: none;
+    }
+
+    #help-popup a:hover {
+     text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -686,12 +853,17 @@ HTML_PAGE = r"""<!DOCTYPE html>
         __SERVER_URL__
       </div>
     </div>
-    <div id="qr-wrap" onclick="document.getElementById('qr-overlay').classList.add('open')" title="Click to enlarge">
-      <div id="qr-box"></div>
+    <div id="qr-section">
+    <div id="qr-wrap"
+         onclick="document.getElementById('qr-overlay').classList.add('open')"
+         title="Click to enlarge">
+        <div id="qr-box"></div>
     </div>
+
+    <div id="help-link">Need Help?</div>
+</div>
   </header>
 
-  <!-- Full-size QR popup -->
   <div id="qr-overlay" onclick="this.classList.remove('open')">
     <div id="qr-popup" onclick="event.stopPropagation()">
       <div id="qr-popup-canvas"></div>
@@ -764,6 +936,37 @@ HTML_PAGE = r"""<!DOCTYPE html>
       selectedFiles = Array.from(e.dataTransfer.files);
       renderQueue();
     });
+    const helpLink = document.getElementById('help-link');
+    const helpOverlay = document.getElementById('help-overlay');
+
+ window.addEventListener('DOMContentLoaded', () => {
+
+    const helpLink = document.getElementById('help-link');
+    const helpOverlay = document.getElementById('help-overlay');
+
+    helpLink.addEventListener('click', () => {
+        helpOverlay.classList.add('open');
+    });
+
+    helpOverlay.addEventListener('click', (e) => {
+        if (e.target === helpOverlay) {
+            helpOverlay.classList.remove('open');
+        }
+    });
+
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const code = btn.previousElementSibling.innerText.trim();
+        navigator.clipboard.writeText(code).then(() => {
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+          setTimeout(() => {
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
+          }, 2000);
+        });
+      });
+    });
+
+});
 
     function renderQueue() {
       queueList.innerHTML = '';
@@ -998,6 +1201,39 @@ HTML_PAGE = r"""<!DOCTYPE html>
     —
     <span style="color:#ffffff;">Par</span><span style="color:#00fff6;">Tab</span>
 </footer>
+<div id="help-overlay">
+  <div id="help-popup">
+    <h3>Need Help?</h3>
+
+    <p>
+      Windows Firewall may block incoming connections.
+    </p>
+
+    <p>
+      Run PowerShell as Administrator and execute:
+    </p>
+
+    <div class="code-block">
+      <code>netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=8889</code>
+      <button class="copy-btn" title="Copy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2"/>
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+      </button>
+    </div>
+
+    <p>
+      Check my GitHub for updates:
+    </p>
+
+    <p>
+      <a href="https://github.com/Parhamhmtt" target="_blank">
+        github.com/Parhamhmtt
+      </a>
+    </p>
+  </div>
+</div>
 </body>
 </html>"""
 
