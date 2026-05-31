@@ -187,7 +187,7 @@ You can customize the port and upload location near the top of `server.py`.
 ```python
 PORT = 8889
 
-UPLOAD_DIR = Path(__file__).parent / "uploads"
+UPLOAD_DIR = Path(sys.executable).parent / "uploads"
 ```
 
 ---
@@ -199,8 +199,9 @@ Windows Firewall may block incoming connections.
 Run PowerShell as Administrator:
 
 ```powershell
-netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=8889
+netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=port
 ```
+If ParTab automatically switches to another port, update the firewall rule accordingly.
 
 Remove the rule later:
 
