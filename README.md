@@ -183,7 +183,7 @@ ParTab/
 ├── requirements.txt
 ├── LICENSE
 ├── README.md
-└── server.py
+└── ParTab.py
 ```
 
 ---
