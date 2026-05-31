@@ -840,6 +840,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
     #help-popup a:hover {
      text-decoration: underline;
     }
+    
+    #download-all-btn:hover {
+     color: var(--accent2);
+    border-color: var(--accent2);
+    }
   </style>
 </head>
 <body>
@@ -899,8 +904,19 @@ HTML_PAGE = r"""<!DOCTYPE html>
     <div id="progress-label">Uploading…</div>
   </div>
 
-  <div class="section-title">Files in uploads/</div>
-  <div id="file-list">
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:0">Files in uploads/</div>
+    <div style="display:flex; gap:6px;">
+      <button class="btn-icon" id="download-all-btn" title="Download all files" style="width:auto; padding:0 10px; gap:6px; display:flex; align-items:center; font-family:var(--font-mono); font-size:.7rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+        All
+      </button>
+      <button class="btn-icon danger" id="delete-all-btn" title="Delete all files" style="width:auto; padding:0 10px; gap:6px; display:flex; align-items:center; font-family:var(--font-mono); font-size:.7rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        All
+      </button>
+    </div>
+  </div>  <div id="file-list">
     <div class="empty">No files yet.</div>
   </div>
 
@@ -1176,6 +1192,45 @@ HTML_PAGE = r"""<!DOCTYPE html>
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
+    
+    async function downloadAll() {
+  try {
+    const r = await fetch('/api/files');
+    const files = await r.json();
+    if (!files.length) { toast('No files to download', ''); return; }
+    for (const f of files) {
+      const a = document.createElement('a');
+      a.href = '/download/' + encodeURIComponent(f.name);
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      await new Promise(res => setTimeout(res, 300)); // slight delay between downloads
+    }
+    toast(`⬇ ${files.length} download(s) started`, 'success');
+  } catch (e) {
+    toast('Download failed', 'error');
+  }
+}
+
+async function deleteAll() {
+  try {
+    const r = await fetch('/api/files');
+    const files = await r.json();
+    if (!files.length) { toast('No files to delete', ''); return; }
+    pausePoll();
+    await Promise.all(files.map(f => fetch('/delete/' + encodeURIComponent(f.name))));
+    toast(`🗑 ${files.length} file(s) deleted`, 'success');
+    await loadFiles();
+    resumePoll();
+     } catch (e) {
+      toast('Delete failed', 'error');
+    }
+    }
+
+    document.getElementById('download-all-btn').addEventListener('click', downloadAll);
+    document.getElementById('delete-all-btn').addEventListener('click', deleteAll);
+
   </script>
 
 <footer style="
