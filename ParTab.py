@@ -13,13 +13,33 @@ import threading
 import time
 import sys
 
-PORT = 8889
-url = ""
+port = 8889
+ip = None
+url = None
 last_ping = [None]
 
 BASE_DIR = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+def initialize_network():
+    global port, ip, url
+
+    port = 8889
+    ip = get_local_ipv4()
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test:
+        test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        try:
+            test.bind(("", port))
+        except OSError:
+            print(f"\n⚠ Port {port} is already in use.")
+
+            if not kill_port(port):
+                port = find_free_port(port + 1)
+
+    url = f"http://{ip}:{port}"
 
 def resource_path(relative):
     base = getattr(sys, '_MEIPASS', Path(__file__).parent)
@@ -1296,27 +1316,8 @@ async function deleteAll() {
 
 
 def main():
-    global url
+    global port, ip, url
 
-    port = PORT
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test:
-        test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            test.bind(("", port))
-        except OSError:
-            print(f"\n  ⚠  Port {port} is already in use.")
-            print("     Attempting to free it... ", end="", flush=True)
-            freed = kill_port(port)
-            if freed:
-                print("done.")
-                time.sleep(0.5)
-            else:
-                print("could not kill process (try manually or run as admin).")
-                port = find_free_port(port + 1)
-                print(f"     Falling back to port {port}.\n")
-
-    ip = get_local_ipv4()
     url = f"http://{ip}:{port}"
     webbrowser.open(f"http://localhost:{port}")
     print()
@@ -1356,4 +1357,5 @@ def main():
 
 
 if __name__ == "__main__":
+    initialize_network()
     main()
