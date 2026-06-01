@@ -22,10 +22,10 @@ BASE_DIR = Path(sys.executable).parent if getattr(sys, "frozen", False) else Pat
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+
 def initialize_network():
     global port, ip, url
 
-    port = 8889
     ip = get_local_ipv4()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test:
@@ -41,9 +41,11 @@ def initialize_network():
 
     url = f"http://{ip}:{port}"
 
+
 def resource_path(relative):
     base = getattr(sys, '_MEIPASS', Path(__file__).parent)
     return Path(base) / relative
+
 
 def get_local_ipv4() -> str:
     try:
@@ -189,7 +191,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 pass
 
     def _serve_index(self):
-        body = HTML_PAGE.replace("__SERVER_URL__", url).encode()
+        body = (
+            HTML_PAGE
+            .replace("__SERVER_URL__", url)
+            .replace("__PORT__", str(port))
+            .encode()
+        )
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -860,7 +867,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     #help-popup a:hover {
      text-decoration: underline;
     }
-    
+
     #download-all-btn:hover {
      color: var(--accent2);
     border-color: var(--accent2);
@@ -1212,7 +1219,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
-    
+
     async function downloadAll() {
   try {
     const r = await fetch('/api/files');
@@ -1291,7 +1298,7 @@ async function deleteAll() {
     </p>
 
     <div class="code-block">
-      <code>netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=8889</code>
+      <code>netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=__PORT__</code>
       <button class="copy-btn" title="Copy">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="9" y="9" width="13" height="13" rx="2"/>
