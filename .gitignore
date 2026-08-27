@@ -3,9 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Virtual Environment
+# Virtual environments
 .venv/
 venv/
+.build-venv/
 
 # PyInstaller
 build/
