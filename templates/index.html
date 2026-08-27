@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParTab</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <style>
+    :root {
+      --bg: #030408;
+      --surface: #161920;
+      --border: #252830;
+      --accent: #00fff6;
+      --accent2: #00d9ff;
+      --danger: #ff5c7a;
+      --text: #e8eaf0;
+      --muted: #6b7080;
+      --radius: 14px;
+      --font-mono: ui-monospace, 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+      --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100dvh;
+      padding: 24px 16px 60px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 5vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: .06em;
+    }
+
+    #dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+      margin-bottom: 20px;
+      background: var(--surface);
+    }
+
+    #dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(92, 255, 177, .05);
+    }
+
+    #dropzone input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      width: 52px;
+      height: 52px;
+      background: rgba(92, 255, 177, .1);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+      color: var(--accent);
+    }
+
+    .drop-label {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .drop-label strong {
+      color: var(--text);
+    }
+
+    #upload-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #0d0f14;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: opacity .15s, transform .1s;
+      display: none;
+      margin-bottom: 24px;
+    }
+
+    #upload-btn:active {
+      transform: scale(.98);
+      opacity: .85;
+    }
+
+    #progress-wrap {
+      display: none;
+      margin-bottom: 18px;
+    }
+
+    #progress-bar-bg {
+      background: var(--border);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      width: 0%;
+      transition: width .2s;
+    }
+
+    #progress-label {
+      font-size: .72rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    #remote-transfers-wrap {
+      display: none;
+      margin-bottom: 20px;
+    }
+
+    #remote-transfers {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .remote-transfer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .remote-transfer.aborted {
+      border-color: rgba(255, 92, 122, .5);
+    }
+
+    .remote-transfer.completed {
+      border-color: rgba(0, 255, 246, .45);
+    }
+
+    .remote-transfer-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .remote-transfer-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: .78rem;
+    }
+
+    .remote-transfer-percent {
+      flex-shrink: 0;
+      color: var(--accent);
+      font-size: .72rem;
+      font-weight: 700;
+    }
+
+    .remote-transfer.aborted .remote-transfer-percent {
+      color: var(--danger);
+    }
+
+    .remote-progress-bg {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: var(--border);
+    }
+
+    .remote-progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .18s ease;
+    }
+
+    .remote-transfer.aborted .remote-progress-bar {
+      background: var(--danger);
+    }
+
+    .remote-transfer-meta {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: .66rem;
+      line-height: 1.4;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 99px;
+      font-size: .8rem;
+      transition: transform .3s cubic-bezier(.34, 1.56, .64, 1);
+      white-space: nowrap;
+      z-index: 999;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.success {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #toast.error {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    #file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .file-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color .15s;
+    }
+
+    .file-item:hover {
+      border-color: #35394a;
+    }
+
+    .file-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(79, 156, 255, .12);
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      color: var(--accent2);
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: .85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .file-meta {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      transition: color .15s, border-color .15s, background .15s;
+    }
+
+    .btn-icon:hover {
+      color: var(--text);
+      border-color: #35394a;
+    }
+
+    .btn-icon.danger:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(255, 92, 122, .07);
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .8rem;
+      padding: 32px 0;
+    }
+
+    #queue-list {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .queue-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+
+    .queue-item span {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    #qr-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .qr-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+
+    #qr-wrap {
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    #qr-box {
+      width: 75px;
+      height: 75px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,.4);
+      transition: transform .15s;
+    }
+
+    #qr-box:hover {
+      transform: scale(1.05);
+    }
+
+    #qr-box canvas,
+    #qr-box img {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    #qr-label {
+      text-align: center;
+      font-size: .58rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    #qr-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      display: none;
+      place-items: center;
+      z-index: 1000;
+      cursor: pointer;
+    }
+
+    #qr-overlay.open {
+      display: grid;
+    }
+
+    #qr-popup {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: pop-in .2s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    #qr-popup-label {
+      font-family: var(--font-display);
+      font-size: .8rem;
+      color: #333;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+
+    @keyframes pop-in {
+      from {
+        transform: scale(.8);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+  #help-link {
+  font-size: .75rem;
+  color: #8a90a0;
+  margin-top: 7px;
+  margin-top: 7px;
+  text-align: center;
+  cursor: pointer;
+  transition: color .15s;
+  user-select: none;
+  align-self: flex-end;
+  width: 75px;
+}
+
+    #help-link:hover {
+      color: var(--accent);
+    }
+
+    #help-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      place-items: center;
+      z-index: 1200;
+    }
+
+    #help-overlay.open {
+      display: grid;
+    }
+
+    #help-popup {
+      width: min(92vw, 620px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      line-height: 1.6;
+      color: var(--text);
+      font-size: .85rem;
+    }
+
+    #help-popup h3 {
+      margin-bottom: 14px;
+      color: var(--accent);
+      font-family: var(--font-display);
+    }
+
+    #help-popup .code-block {
+      position: relative;
+      margin: 12px 0;
+    }
+
+    #help-popup code {
+      display: block;
+      padding: 12px 44px 12px 12px;
+      background: #0d0f14;
+      border-radius: 10px;
+      overflow-x: auto;
+      color: var(--accent);
+    }
+
+    #help-popup .copy-btn {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 28px;
+      height: 28px;
+      background: #1e2130;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      transition: color .15s, border-color .15s;
+      padding: 0;
+    }
+
+    #help-popup .copy-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    #help-popup a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    #help-popup a:hover {
+      text-decoration: underline;
+    }
+
+    #download-all-btn:hover {
+      color: var(--accent2);
+      border-color: var(--accent2);
+    }
+
+
+    #security-control {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #security-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 92, 122, .55);
+      border-radius: 999px;
+      background: rgba(255, 92, 122, .06);
+      color: var(--danger);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .07em;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+
+    #security-toggle:not(.secure):hover:not(:disabled) {
+      border-color: var(--danger);
+      color: var(--danger);
+      background: rgba(255, 92, 122, .10);
+    }
+
+    #security-toggle.secure:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 255, 246, .10);
+    }
+
+    #security-toggle .security-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 3px rgba(255, 92, 122, .10);
+    }
+
+    #security-toggle.secure {
+      color: var(--accent);
+      border-color: rgba(0, 255, 246, .45);
+      background: rgba(0, 255, 246, .06);
+    }
+
+    #security-toggle.secure .security-dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 255, 246, .10);
+    }
+
+    #security-toggle:disabled {
+      cursor: default;
+      opacity: .72;
+    }
+
+    #exit-button {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 92, 122, .55);
+      border-radius: 999px;
+      background: rgba(255, 92, 122, .06);
+      color: var(--danger);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, opacity .15s;
+    }
+
+    #exit-button.visible {
+      display: inline-flex;
+    }
+
+    #exit-button:hover:not(:disabled) {
+      border-color: var(--danger);
+      background: rgba(255, 92, 122, .12);
+    }
+
+    #exit-button:disabled {
+      cursor: default;
+      opacity: .6;
+    }
+
+    #exit-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2950;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, .72);
+      backdrop-filter: blur(7px);
+    }
+
+    #exit-confirm-overlay.show {
+      display: grid;
+    }
+
+    .exit-confirm-card {
+      width: min(430px, 100%);
+      padding: 24px;
+      border: 1px solid rgba(255, 92, 122, .42);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .45);
+    }
+
+    .exit-confirm-card h3 {
+      margin: 0 0 8px;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .exit-confirm-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.65;
+    }
+
+    .exit-confirm-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .exit-confirm-actions button {
+      height: 40px;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #exit-confirm-cancel {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+
+    #exit-confirm-accept {
+      border: 1px solid var(--danger);
+      background: var(--danger);
+      color: #0d0f14;
+    }
+
+    #exit-confirm-accept:disabled {
+      cursor: default;
+      opacity: .65;
+    }
+
+    #shutdown-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 3000;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(3, 4, 8, .96);
+      backdrop-filter: blur(8px);
+    }
+
+    #shutdown-screen.show {
+      display: grid;
+    }
+
+    .shutdown-card {
+      width: min(430px, 100%);
+      padding: 28px;
+      border: 1px solid rgba(255, 92, 122, .42);
+      border-radius: 18px;
+      background: var(--surface);
+      text-align: center;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .45);
+    }
+
+    .shutdown-icon {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 92, 122, .45);
+      border-radius: 50%;
+      background: rgba(255, 92, 122, .08);
+      color: var(--danger);
+      font-size: 1.35rem;
+    }
+
+    .shutdown-card h2 {
+      margin: 0 0 8px;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+    }
+
+    .shutdown-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.65;
+    }
+
+    #qr-section {
+      margin-left: 0;
+    }
+
+
+    #requests-toggle {
+      display: none;
+      align-items: center;
+      gap: 7px;
+      height: 36px;
+      padding: 0 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+
+    #requests-toggle.visible {
+      display: inline-flex;
+    }
+
+    #requests-toggle:hover,
+    #requests-toggle.open,
+    #requests-toggle.has-pending {
+      color: var(--accent);
+      border-color: rgba(0, 255, 246, .42);
+      background: rgba(0, 255, 246, .06);
+    }
+
+    #requests-badge {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      display: none;
+      place-items: center;
+      background: var(--accent);
+      color: #0d0f14;
+      font-size: .62rem;
+      line-height: 1;
+    }
+
+    #requests-toggle.has-pending #requests-badge {
+      display: grid;
+    }
+
+    #requests-panel {
+      position: fixed;
+      top: 82px;
+      right: 16px;
+      z-index: 1100;
+      width: min(410px, calc(100vw - 32px));
+      max-height: min(72vh, 660px);
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(22, 25, 32, .98);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, .42);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #requests-panel.open {
+      display: flex;
+    }
+
+    .requests-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .requests-panel-head h3 {
+      margin: 0 0 4px;
+      font-family: var(--font-display);
+      font-size: .95rem;
+    }
+
+    .requests-panel-head p {
+      color: var(--muted);
+      font-size: .7rem;
+      line-height: 1.45;
+    }
+
+    #requests-close {
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    #requests-close:hover {
+      color: var(--text);
+      border-color: #3b4050;
+    }
+
+    #approval-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .approval-request {
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+
+    .approval-device {
+      margin-bottom: 12px;
+    }
+
+    .approval-device strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text);
+      font-size: .84rem;
+    }
+
+    .approval-device span {
+      display: block;
+      color: var(--muted);
+      font-size: .72rem;
+      line-height: 1.5;
+    }
+
+    .approval-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .approval-actions button {
+      height: 38px;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .approval-actions button:disabled {
+      cursor: wait;
+      opacity: .55;
+    }
+
+    .approval-reject {
+      border: 1px solid rgba(255, 92, 122, .5);
+      background: rgba(255, 92, 122, .07);
+      color: var(--danger);
+    }
+
+    .approval-approve {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #0d0f14;
+    }
+
+    #approval-queue {
+      margin-top: 10px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .66rem;
+    }
+
+    #request-notification {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      z-index: 1300;
+      width: min(460px, calc(100vw - 32px));
+      padding: 12px 18px;
+      border: 1px solid rgba(0, 255, 246, .42);
+      border-radius: 999px;
+      background: rgba(22, 25, 32, .98);
+      color: var(--text);
+      box-shadow: 0 14px 45px rgba(0, 0, 0, .38);
+      transform: translate(-50%, -18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s, transform .18s;
+      text-align: center;
+      font-size: .75rem;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    #request-notification.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #request-notification strong {
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        column-gap: 14px;
+        row-gap: 14px;
+        align-items: center;
+      }
+
+      .logo {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .brand-block {
+        grid-column: 2 / 4;
+        grid-row: 1;
+        min-width: 0;
+      }
+
+      #security-control {
+        grid-column: 1 / 3;
+        grid-row: 2;
+        justify-self: start;
+        margin-left: 0;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      #requests-panel {
+        top: 144px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        max-height: calc(100dvh - 164px);
+      }
+
+      #request-notification {
+        top: 12px;
+        left: 50%;
+        right: auto;
+        width: min(460px, calc(100vw - 24px));
+      }
+
+      #qr-section {
+        grid-column: 3;
+        grid-row: 2;
+        justify-self: end;
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <img src="/assets/logo.png">
+    </div>
+
+    <div class="brand-block">
+      <h1>Par<span>Tab</span></h1>
+      <div class="subtitle"> Mobile devices &lt;-&gt; PC · same Wi-Fi</div>
+      <div class="subtitle" id="server-url" style="margin-top:4px; color:var(--accent); letter-spacing:.02em">
+        __SERVER_URL__
+      </div>
+    </div>
+
+    <div id="security-control">
+      <button id="security-toggle" type="button" title="Only the host PC can change access mode">
+        <span class="security-dot"></span>
+        <span id="security-label">INSECURE</span>
+      </button>
+
+      <button id="requests-toggle" type="button" title="Connection requests">
+        <span>Requests</span>
+        <span id="requests-badge">0</span>
+      </button>
+
+      <button id="exit-button" type="button" title="Shut down ParTab">Exit</button>
+    </div>
+
+  <div id="qr-section">
+  <div class="qr-row">
+    <div id="qr-wrap"
+         onclick="document.getElementById('qr-overlay').classList.add('open')"
+         title="Click to enlarge">
+      <div id="qr-box">
+        <img src="/qr.png" alt="ParTab QR Code">
+      </div>
+    </div>
+  </div>
+
+  <div id="help-link">Need Help?</div>
+</div>
+  </header>
+
+  <div id="qr-overlay" onclick="this.classList.remove('open')">
+    <div id="qr-popup" onclick="event.stopPropagation()">
+      <div id="qr-popup-canvas">
+        <img src="/qr.png" alt="ParTab QR Code" width="280" height="280">
+      </div>
+      <div id="qr-popup-label">__SERVER_URL__</div>
+    </div>
+  </div>
+
+  <div id="dropzone">
+    <input type="file" id="file-input" multiple accept="*/*">
+    <div class="drop-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 16 12 12 8 16"/>
+        <line x1="12" y1="12" x2="12" y2="21"/>
+        <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+      </svg>
+    </div>
+
+    <div class="drop-label">
+      <strong>Tap to choose files</strong><br>
+      or drag &amp; drop from your device
+    </div>
+  </div>
+
+  <div id="queue-list"></div>
+
+  <button id="upload-btn">⬆ Upload Files</button>
+
+  <div id="progress-wrap">
+    <div id="progress-bar-bg">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="progress-label">Uploading…</div>
+  </div>
+
+  <div id="remote-transfers-wrap">
+    <div class="section-title">Live uploads</div>
+    <div id="remote-transfers"></div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div class="section-title" style="margin-bottom:0">Files in uploads/</div>
+    <div style="display:flex; gap:6px;">
+      <button class="btn-icon" id="download-all-btn" title="Download all files" style="width:auto; padding:0 10px; gap:6px; display:flex; align-items:center; font-family:var(--font-mono); font-size:.7rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="8 17 12 21 16 17"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+        </svg>
+        All
+      </button>
+
+      <button class="btn-icon danger" id="delete-all-btn" title="Delete all files" style="width:auto; padding:0 10px; gap:6px; display:flex; align-items:center; font-family:var(--font-mono); font-size:.7rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/>
+          <path d="M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+        All
+      </button>
+    </div>
+  </div>
+
+  <div id="file-list">
+    <div class="empty">No files yet.</div>
+  </div>
+
+  <div id="requests-panel" aria-hidden="true">
+    <div class="requests-panel-head">
+      <div>
+        <h3>Connection requests</h3>
+        <p>Devices waiting for access while Secured mode is enabled.</p>
+      </div>
+      <button id="requests-close" type="button" title="Close">×</button>
+    </div>
+    <div id="approval-list"></div>
+    <div id="approval-queue"></div>
+  </div>
+
+  <div id="request-notification" aria-live="polite" role="status" title="Open connection requests">
+    🔐 Devices are waiting for approval — <strong>check Requests</strong>
+  </div>
+
+  <div id="exit-confirm-overlay" aria-hidden="true">
+    <div class="exit-confirm-card" role="dialog" aria-modal="true" aria-labelledby="exit-confirm-title">
+      <h3 id="exit-confirm-title">Exit ParTab?</h3>
+      <p>Active transfers will stop and all connected devices will be disconnected.</p>
+      <div class="exit-confirm-actions">
+        <button id="exit-confirm-cancel" type="button">Cancel</button>
+        <button id="exit-confirm-accept" type="button">Exit ParTab</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="shutdown-screen" aria-hidden="true">
+    <div class="shutdown-card">
+      <div class="shutdown-icon">⏻</div>
+      <h2>ParTab stopped</h2>
+      <p id="shutdown-message">The server was shut down from the host PC. You can close this tab.</p>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const fileInput     = document.getElementById('file-input');
+    const dropzone      = document.getElementById('dropzone');
+    const uploadBtn     = document.getElementById('upload-btn');
+    const queueList     = document.getElementById('queue-list');
+    const progressWrap  = document.getElementById('progress-wrap');
+    const progressBar   = document.getElementById('progress-bar');
+    const progressLabel = document.getElementById('progress-label');
+    const remoteTransfersWrap = document.getElementById('remote-transfers-wrap');
+    const remoteTransfersEl   = document.getElementById('remote-transfers');
+    const fileListEl    = document.getElementById('file-list');
+    const securityToggle = document.getElementById('security-toggle');
+    const securityLabel  = document.getElementById('security-label');
+    const requestsToggle = document.getElementById('requests-toggle');
+    const requestsBadge   = document.getElementById('requests-badge');
+    const requestsPanel   = document.getElementById('requests-panel');
+    const requestsClose   = document.getElementById('requests-close');
+    const approvalList    = document.getElementById('approval-list');
+    const approvalQueue   = document.getElementById('approval-queue');
+    const requestNotification = document.getElementById('request-notification');
+    const exitButton = document.getElementById('exit-button');
+    const exitConfirmOverlay = document.getElementById('exit-confirm-overlay');
+    const exitConfirmCancel = document.getElementById('exit-confirm-cancel');
+    const exitConfirmAccept = document.getElementById('exit-confirm-accept');
+    const shutdownScreen = document.getElementById('shutdown-screen');
+    const shutdownMessage = document.getElementById('shutdown-message');
+
+    let securityState = { secure: false, host: false };
+    const approvalBusyIds = new Set();
+    const knownPendingIds = new Set();
+    let currentPending = [];
+    let pendingRefreshToken = 0;
+    let requestNotificationTimer = null;
+    let eventSource = null;
+    let filesReloadTimer = null;
+    const localTransferIds = new Set();
+    const remoteTransfers = new Map();
+
+    function makeTransferId() {
+      return 'pt-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function rememberLocalTransfer(id) {
+      localTransferIds.add(id);
+      setTimeout(() => localTransferIds.delete(id), 15000);
+    }
+
+    function formatTransferBytes(n) {
+      if (!Number.isFinite(Number(n))) return '0 B';
+      return humanSize(Number(n));
+    }
+
+    function updateRemoteTransfersVisibility() {
+      remoteTransfersWrap.style.display = remoteTransfers.size ? 'block' : 'none';
+    }
+
+    function removeRemoteTransfer(id, delay = 0) {
+      const remove = () => {
+        const item = remoteTransfers.get(id);
+        if (!item) return;
+        item.root.remove();
+        remoteTransfers.delete(id);
+        updateRemoteTransfersVisibility();
+      };
+      if (delay) setTimeout(remove, delay);
+      else remove();
+    }
+
+    function upsertRemoteTransfer(data) {
+      const id = String(data.id || '');
+      if (!id || localTransferIds.has(id)) return;
+
+      let item = remoteTransfers.get(id);
+      if (!item) {
+        const root = document.createElement('div');
+        root.className = 'remote-transfer';
+        root.innerHTML = `
+          <div class="remote-transfer-head">
+            <div class="remote-transfer-name"></div>
+            <div class="remote-transfer-percent">0%</div>
+          </div>
+          <div class="remote-progress-bg"><div class="remote-progress-bar"></div></div>
+          <div class="remote-transfer-meta"></div>
+        `;
+        item = {
+          root,
+          name: root.querySelector('.remote-transfer-name'),
+          percent: root.querySelector('.remote-transfer-percent'),
+          bar: root.querySelector('.remote-progress-bar'),
+          meta: root.querySelector('.remote-transfer-meta')
+        };
+        remoteTransfers.set(id, item);
+        remoteTransfersEl.appendChild(root);
+        updateRemoteTransfersVisibility();
+      }
+
+      const percent = Math.max(0, Math.min(100, Number(data.percent || 0)));
+      const device = data.device || data.ip || 'Another device';
+      const loaded = formatTransferBytes(data.loaded || 0);
+      const total = formatTransferBytes(data.total || 0);
+
+      item.name.textContent = data.name || 'Receiving files…';
+      item.percent.textContent = Math.round(percent) + '%';
+      item.bar.style.width = percent + '%';
+      item.meta.textContent = `${device} · ${loaded} / ${total}`;
+      item.root.classList.remove('aborted', 'completed');
+    }
+
+    function completeRemoteTransfer(data) {
+      const id = String(data.id || '');
+      if (!id || localTransferIds.has(id)) return;
+      upsertRemoteTransfer({ ...data, percent: 100 });
+      const item = remoteTransfers.get(id);
+      if (!item) return;
+      item.root.classList.add('completed');
+      item.percent.textContent = '100%';
+      item.meta.textContent = `${data.device || data.ip || 'Another device'} · Upload complete`;
+      removeRemoteTransfer(id, 1600);
+    }
+
+    function abortRemoteTransfer(data) {
+      const id = String(data.id || '');
+      if (!id || localTransferIds.has(id)) return;
+      upsertRemoteTransfer(data);
+      const item = remoteTransfers.get(id);
+      if (!item) return;
+      item.root.classList.add('aborted');
+      item.percent.textContent = 'Interrupted';
+      item.meta.textContent = `${data.device || data.ip || 'Another device'} · Upload interrupted`;
+      removeRemoteTransfer(id, 3500);
+    }
+
+    function renderSecurityState() {
+      securityToggle.classList.toggle('secure', securityState.secure);
+      securityLabel.textContent = securityState.secure ? 'SECURED' : 'INSECURE';
+      securityToggle.disabled = !securityState.host;
+      securityToggle.title = securityState.host
+        ? 'Toggle device approval mode'
+        : 'Only the host PC can change access mode';
+
+      exitButton.classList.toggle('visible', securityState.host);
+
+      const showRequests = securityState.host && securityState.secure;
+      requestsToggle.classList.toggle('visible', showRequests);
+      if (!showRequests) {
+        closeRequestsPanel();
+        hideRequestNotification();
+      }
+    }
+
+    securityToggle.addEventListener('click', async () => {
+      if (!securityState.host) return;
+      securityToggle.disabled = true;
+
+      try {
+        const response = await fetch('/api/security/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secure: !securityState.secure })
+        });
+        if (!response.ok) throw new Error('mode change failed');
+        const data = await response.json();
+        securityState.secure = !!data.secure;
+        toast(
+          securityState.secure ? '🔒 Secured mode enabled' : '🔓 Insecure mode enabled',
+          securityState.secure ? 'success' : 'error'
+        );
+      } catch (e) {
+        toast('Could not change security mode', 'error');
+      }
+
+      renderSecurityState();
+    });
+
+    function showShutdownScreen(message) {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      closeRequestsPanel();
+      hideRequestNotification();
+      closeExitConfirm();
+      shutdownMessage.textContent = message || 'The server was shut down from the host PC. You can close this tab.';
+      shutdownScreen.classList.add('show');
+      shutdownScreen.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeTabAfterShutdown(message) {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+      closeRequestsPanel();
+      hideRequestNotification();
+      closeExitConfirm();
+
+      try {
+        window.close();
+      } catch (e) {}
+
+      setTimeout(() => {
+        if (!window.closed) {
+          showShutdownScreen(message || 'The ParTab server was shut down from the host PC. You can close this tab.');
+        }
+      }, 250);
+    }
+
+    function openExitConfirm() {
+      if (!securityState.host || exitButton.disabled) return;
+      exitConfirmOverlay.classList.add('show');
+      exitConfirmOverlay.setAttribute('aria-hidden', 'false');
+      exitConfirmAccept.focus();
+    }
+
+    function closeExitConfirm() {
+      exitConfirmOverlay.classList.remove('show');
+      exitConfirmOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    exitButton.addEventListener('click', openExitConfirm);
+    exitConfirmCancel.addEventListener('click', closeExitConfirm);
+    exitConfirmOverlay.addEventListener('click', event => {
+      if (event.target === exitConfirmOverlay && !exitConfirmAccept.disabled) {
+        closeExitConfirm();
+      }
+    });
+
+    exitConfirmAccept.addEventListener('click', async () => {
+      if (!securityState.host || exitConfirmAccept.disabled) return;
+
+      exitButton.disabled = true;
+      exitConfirmAccept.disabled = true;
+      exitButton.textContent = 'EXITING…';
+      exitConfirmAccept.textContent = 'Shutting down…';
+
+      try {
+        const response = await fetch('/api/system/exit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-ParTab-Host-Action': 'shutdown'
+          },
+          body: JSON.stringify({ confirm: 'shutdown' })
+        });
+
+        if (!response.ok) throw new Error('shutdown failed');
+      } catch (e) {
+        exitButton.disabled = false;
+        exitConfirmAccept.disabled = false;
+        exitButton.textContent = 'Exit';
+        exitConfirmAccept.textContent = 'Exit ParTab';
+        closeExitConfirm();
+        toast('Could not shut down ParTab', 'error');
+      }
+    });
+
+    function openRequestsPanel() {
+      if (!(securityState.host && securityState.secure)) return;
+      requestsPanel.classList.add('open');
+      requestsPanel.setAttribute('aria-hidden', 'false');
+      requestsToggle.classList.add('open');
+      hideRequestNotification();
+    }
+
+    function closeRequestsPanel() {
+      requestsPanel.classList.remove('open');
+      requestsPanel.setAttribute('aria-hidden', 'true');
+      requestsToggle.classList.remove('open');
+    }
+
+    function updateRequestsBadge(count) {
+      const n = Math.max(0, Number(count || 0));
+      requestsBadge.textContent = String(n);
+      requestsToggle.classList.toggle('has-pending', n > 0);
+    }
+
+    function hideRequestNotification() {
+      clearTimeout(requestNotificationTimer);
+      requestNotificationTimer = null;
+      requestNotification.classList.remove('show');
+    }
+
+    function showRequestNotification() {
+      if (requestsPanel.classList.contains('open')) return;
+      requestNotification.classList.add('show');
+
+      clearTimeout(requestNotificationTimer);
+      requestNotificationTimer = setTimeout(() => {
+        hideRequestNotification();
+      }, 5000);
+    }
+
+    requestsToggle.addEventListener('click', () => {
+      if (requestsPanel.classList.contains('open')) {
+        closeRequestsPanel();
+      } else {
+        openRequestsPanel();
+      }
+    });
+
+    requestsClose.addEventListener('click', closeRequestsPanel);
+
+    document.addEventListener('click', event => {
+      if (!requestsPanel.classList.contains('open')) return;
+      if (requestsPanel.contains(event.target) || requestsToggle.contains(event.target)) return;
+      closeRequestsPanel();
+    });
+
+    requestNotification.addEventListener('click', event => {
+      event.stopPropagation();
+      hideRequestNotification();
+      openRequestsPanel();
+    });
+
+    function renderPendingApprovals(pending, announceNew = false) {
+      currentPending = Array.isArray(pending) ? pending : [];
+      approvalList.innerHTML = '';
+
+      const currentIds = new Set(
+        currentPending
+          .map(request => String(request.id || ''))
+          .filter(Boolean)
+      );
+
+      const newlySeen = currentPending.filter(request => {
+        const id = String(request.id || '');
+        return id && !knownPendingIds.has(id);
+      });
+
+      for (const id of [...knownPendingIds]) {
+        if (!currentIds.has(id)) knownPendingIds.delete(id);
+      }
+      for (const id of currentIds) knownPendingIds.add(id);
+
+      updateRequestsBadge(currentPending.length);
+
+      if (!currentPending.length) {
+        approvalQueue.textContent = 'No pending requests';
+        closeRequestsPanel();
+        hideRequestNotification();
+        return;
+      }
+
+      for (const request of currentPending) {
+        const requestId = String(request.id || '');
+        if (!requestId) continue;
+
+        const card = document.createElement('div');
+        card.className = 'approval-request';
+        card.dataset.requestId = requestId;
+
+        const device = document.createElement('div');
+        device.className = 'approval-device';
+
+        const name = document.createElement('strong');
+        name.textContent = request.device || 'Unknown device';
+        const ip = document.createElement('span');
+        ip.textContent = 'IP: ' + (request.ip || 'Unknown');
+        const created = document.createElement('span');
+        created.textContent = request.created_at ? 'Requested at ' + request.created_at : '';
+
+        device.append(name, ip);
+        if (created.textContent) device.appendChild(created);
+
+        const actions = document.createElement('div');
+        actions.className = 'approval-actions';
+
+        const reject = document.createElement('button');
+        reject.type = 'button';
+        reject.className = 'approval-reject';
+        reject.textContent = 'Reject';
+        reject.disabled = approvalBusyIds.has(requestId);
+        reject.addEventListener('click', () => decideApproval(requestId, 'reject'));
+
+        const approve = document.createElement('button');
+        approve.type = 'button';
+        approve.className = 'approval-approve';
+        approve.textContent = 'Approve';
+        approve.disabled = approvalBusyIds.has(requestId);
+        approve.addEventListener('click', () => decideApproval(requestId, 'approve'));
+
+        actions.append(reject, approve);
+        card.append(device, actions);
+        approvalList.appendChild(card);
+      }
+
+      approvalQueue.textContent = currentPending.length === 1
+        ? '1 connection request waiting'
+        : `${currentPending.length} connection requests waiting`;
+
+      if (announceNew && newlySeen.length) {
+        showRequestNotification();
+      }
+    }
+
+    async function refreshPendingApprovals(announceNew = false) {
+      const refreshToken = ++pendingRefreshToken;
+      try {
+        const response = await fetch('/api/security/pending', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (refreshToken !== pendingRefreshToken) return;
+        const pending = Array.isArray(data.pending) ? data.pending : [];
+        renderPendingApprovals(pending, announceNew);
+      } catch (e) {}
+    }
+
+    async function decideApproval(requestId, decision) {
+      if (!requestId || approvalBusyIds.has(requestId)) return;
+      approvalBusyIds.add(requestId);
+
+      const card = approvalList.querySelector(`[data-request-id="${CSS.escape(requestId)}"]`);
+      if (card) {
+        card.querySelectorAll('button').forEach(button => button.disabled = true);
+      }
+
+      try {
+        const response = await fetch('/api/security/decision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request_id: requestId, decision })
+        });
+        if (!response.ok) throw new Error('decision failed');
+
+        currentPending = currentPending.filter(request => String(request.id || '') !== requestId);
+        knownPendingIds.delete(requestId);
+        renderPendingApprovals(currentPending, false);
+
+        toast(
+          decision === 'approve' ? '✔ Device approved' : '✖ Device rejected',
+          decision === 'approve' ? 'success' : ''
+        );
+      } catch (e) {
+        toast('Could not process request', 'error');
+      } finally {
+        approvalBusyIds.delete(requestId);
+        refreshPendingApprovals(false);
+      }
+    }
+
+    function parseEventData(event) {
+      try {
+        return JSON.parse(event.data || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function scheduleFilesReload() {
+      clearTimeout(filesReloadTimer);
+      filesReloadTimer = setTimeout(loadFiles, 80);
+    }
+
+    function connectEvents() {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource('/events');
+
+      eventSource.addEventListener('ready', event => {
+        const data = parseEventData(event);
+        securityState = { secure: !!data.secure, host: !!data.host };
+        renderSecurityState();
+        scheduleFilesReload();
+
+        if (securityState.host && securityState.secure) {
+          refreshPendingApprovals(false);
+        }
+      });
+
+      eventSource.addEventListener('files_changed', () => {
+        scheduleFilesReload();
+      });
+
+      eventSource.addEventListener('upload_started', event => {
+        upsertRemoteTransfer(parseEventData(event));
+      });
+
+      eventSource.addEventListener('upload_progress', event => {
+        upsertRemoteTransfer(parseEventData(event));
+      });
+
+      eventSource.addEventListener('upload_completed', event => {
+        completeRemoteTransfer(parseEventData(event));
+      });
+
+      eventSource.addEventListener('upload_aborted', event => {
+        abortRemoteTransfer(parseEventData(event));
+      });
+
+      eventSource.addEventListener('security_changed', event => {
+        const data = parseEventData(event);
+        securityState.secure = !!data.secure;
+        renderSecurityState();
+
+        if (!securityState.host && securityState.secure) {
+          location.reload();
+          return;
+        }
+
+        if (securityState.host && securityState.secure) {
+          refreshPendingApprovals(false);
+        } else {
+          currentPending = [];
+          knownPendingIds.clear();
+          approvalList.innerHTML = '';
+          approvalQueue.textContent = '';
+          updateRequestsBadge(0);
+          closeRequestsPanel();
+          hideRequestNotification();
+        }
+      });
+
+      eventSource.addEventListener('connection_request', event => {
+        if (securityState.host && securityState.secure) {
+          const request = parseEventData(event);
+          if (request && request.id && !knownPendingIds.has(String(request.id))) {
+            showRequestNotification();
+          }
+          refreshPendingApprovals(false);
+        }
+      });
+
+      eventSource.addEventListener('pending_changed', () => {
+        if (securityState.host && securityState.secure) {
+          refreshPendingApprovals(false);
+        }
+      });
+
+      eventSource.addEventListener('server_shutdown', () => {
+        closeTabAfterShutdown('The ParTab server was shut down from the host PC. You can close this tab.');
+      });
+
+      eventSource.onerror = () => {};
+    }
+
+    renderSecurityState();
+    connectEvents();
+
+    let selectedFiles = [];
+
+    fileInput.addEventListener('change', () => {
+      selectedFiles = Array.from(fileInput.files);
+      renderQueue();
+    });
+
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      selectedFiles = Array.from(e.dataTransfer.files);
+      renderQueue();
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const helpLink = document.getElementById('help-link');
+      const helpOverlay = document.getElementById('help-overlay');
+
+      helpLink.addEventListener('click', () => {
+        helpOverlay.classList.add('open');
+      });
+
+      helpOverlay.addEventListener('click', (e) => {
+        if (e.target === helpOverlay) {
+          helpOverlay.classList.remove('open');
+        }
+      });
+
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const code = btn.previousElementSibling.innerText.trim();
+
+          navigator.clipboard.writeText(code).then(() => {
+            btn.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            `;
+
+            setTimeout(() => {
+              btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/>
+                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+              `;
+            }, 2000);
+          });
+        });
+      });
+    });
+
+    function renderQueue() {
+      queueList.innerHTML = '';
+
+      if (!selectedFiles.length) {
+        uploadBtn.style.display = 'none';
+        return;
+      }
+
+      uploadBtn.style.display = 'block';
+
+      selectedFiles.forEach(f => {
+        const d = document.createElement('div');
+        d.className = 'queue-item';
+
+        d.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+            <polyline points="13 2 13 9 20 9"/>
+          </svg>
+          <span>${f.name}</span>
+          <span style="color:var(--muted); flex-shrink:0">${humanSize(f.size)}</span>
+        `;
+
+        queueList.appendChild(d);
+      });
+    }
+
+    function humanSize(n) {
+      const u = ['B', 'KB', 'MB', 'GB'];
+      let i = 0;
+
+      while (n >= 1024 && i < u.length - 1) {
+        n /= 1024;
+        i++;
+      }
+
+      return n.toFixed(1) + ' ' + u[i];
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      if (!selectedFiles.length) return;
+
+      const fd = new FormData();
+      selectedFiles.forEach(f => fd.append('file', f, f.name));
+
+      progressWrap.style.display = 'block';
+      uploadBtn.disabled = true;
+      progressBar.style.width = '0%';
+
+      const transferId = makeTransferId();
+      rememberLocalTransfer(transferId);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload');
+      xhr.setRequestHeader('X-ParTab-Transfer-ID', transferId);
+
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const p = Math.round(e.loaded / e.total * 100);
+          progressBar.style.width = p + '%';
+          progressLabel.textContent = `Uploading… ${p}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        progressWrap.style.display = 'none';
+        uploadBtn.disabled = false;
+
+        if (xhr.status === 200) {
+          const r = JSON.parse(xhr.responseText);
+          toast(`✔ ${r.saved.length} file(s) saved`, 'success');
+
+          selectedFiles = [];
+          fileInput.value = '';
+          queueList.innerHTML = '';
+          uploadBtn.style.display = 'none';
+
+          scheduleFilesReload();
+        } else {
+          toast('Upload failed', 'error');
+        }
+      };
+
+      xhr.onerror = () => {
+        progressWrap.style.display = 'none';
+        uploadBtn.disabled = false;
+        toast('Network error', 'error');
+      };
+
+      xhr.send(fd);
+    });
+
+    async function loadFiles() {
+      try {
+        const r = await fetch('/api/files');
+        const files = await r.json();
+
+        if (!files.length) {
+          fileListEl.innerHTML = '<div class="empty">No files yet. ParTab something!</div>';
+          return;
+        }
+
+        fileListEl.innerHTML = files.map((f, i) => `
+          <div class="file-item">
+            <div class="file-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+            </div>
+
+            <div class="file-info">
+              <div class="file-name" title="${esc(f.name)}">${esc(f.name)}</div>
+              <div class="file-meta">${f.size} · ${f.mtime}</div>
+            </div>
+
+            <div class="file-actions">
+              <a href="/download/${encodeURIComponent(f.name)}" download>
+                <button class="btn-icon" title="Download">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="8 17 12 21 16 17"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                  </svg>
+                </button>
+              </a>
+
+              <button class="btn-icon danger" title="Delete" data-idx="${i}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14H6L5 6"/>
+                  <path d="M10 11v6"/>
+                  <path d="M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        document.querySelectorAll('.btn-icon.danger').forEach(btn => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          btn.addEventListener('click', () => deleteFile(files[idx].name));
+        });
+
+      } catch (e) {
+        console.error('loadFiles error:', e);
+      }
+    }
+
+    async function deleteFile(n) {
+      try {
+        await fetch('/delete/' + encodeURIComponent(n));
+      } catch (e) {}
+
+      toast('Deleted', 'success');
+      scheduleFilesReload();
+    }
+
+    function esc(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    let toastTimer;
+
+    function toast(msg, type = '') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'show ' + type;
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.className = '', 2800);
+    }
+
+    async function downloadAll() {
+      try {
+        const r = await fetch('/api/files');
+        const files = await r.json();
+
+        if (!files.length) {
+          toast('No files to download', '');
+          return;
+        }
+
+        for (const f of files) {
+          const a = document.createElement('a');
+          a.href = '/download/' + encodeURIComponent(f.name);
+          a.download = f.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          await new Promise(res => setTimeout(res, 300));
+        }
+
+        toast(`⬇ ${files.length} download(s) started`, 'success');
+      } catch (e) {
+        toast('Download failed', 'error');
+      }
+    }
+
+    async function deleteAll() {
+      try {
+        const r = await fetch('/api/files');
+        const files = await r.json();
+
+        if (!files.length) {
+          toast('No files to delete', '');
+          return;
+        }
+
+        await Promise.all(
+          files.map(f => fetch('/delete/' + encodeURIComponent(f.name)))
+        );
+
+        toast(`🗑 ${files.length} file(s) deleted`, 'success');
+        scheduleFilesReload();
+      } catch (e) {
+        toast('Delete failed', 'error');
+      }
+    }
+
+    document.getElementById('download-all-btn').addEventListener('click', downloadAll);
+    document.getElementById('delete-all-btn').addEventListener('click', deleteAll);
+  </script>
+
+  <footer style="
+      position:fixed;
+      bottom:0;
+      left:0;
+      width:100%;
+      padding:14px 0;
+      text-align:center;
+      background:#0d0f14;
+      border-top:1px solid #252830;
+      color:#6b7080;
+      font-family:ui-monospace,'SF Mono','Menlo','Consolas',monospace;
+      font-size:0.8rem;
+      z-index:999;
+  ">
+      © 2026
+      <a href="https://github.com/Parhamhmtt" target="_blank" style="
+          color:#e8eaf0;
+          text-decoration:none;
+          font-weight:600;
+      ">
+          Parhamhmtt
+      </a>
+      —
+      <span style="color:#ffffff;">Par</span><span style="color:#00fff6;">Tab</span>
+  </footer>
+
+  <div id="help-overlay">
+    <div id="help-popup">
+      <h3>Need Help?</h3>
+
+      <p>
+        Windows Firewall may block incoming connections.
+      </p>
+
+      <p>
+        Run PowerShell as Administrator and execute:
+      </p>
+
+      <div class="code-block">
+        <code>netsh advfirewall firewall add rule name="ParTab" dir=in action=allow protocol=TCP localport=__PORT__</code>
+
+        <button class="copy-btn" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </button>
+      </div>
+
+      <p>
+        Check my GitHub for updates:
+      </p>
+
+      <p>
+        <a href="https://github.com/Parhamhmtt" target="_blank">
+          github.com/Parhamhmtt
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

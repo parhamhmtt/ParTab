@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParTab · Approval required</title>
+  <style>
+    :root {
+      --bg:#030408;
+      --surface:#161920;
+      --border:#252830;
+      --accent:#00fff6;
+      --danger:#ff5c7a;
+      --text:#e8eaf0;
+      --muted:#6b7080;
+      --font:ui-monospace,'SF Mono','Menlo','Consolas','Liberation Mono',monospace;
+    }
+    * { box-sizing:border-box; }
+    body {
+      margin:0;
+      min-height:100dvh;
+      display:grid;
+      place-items:center;
+      padding:24px;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--font);
+    }
+    .card {
+      width:min(460px,100%);
+      padding:28px;
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--surface);
+      text-align:center;
+    }
+    .lock {
+      width:58px;
+      height:58px;
+      margin:0 auto 18px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      border:1px solid rgba(0,255,246,.35);
+      background:rgba(0,255,246,.08);
+      color:var(--accent);
+      font-size:1.5rem;
+    }
+    h1 { margin:0 0 10px; font-size:1.3rem; }
+    p { margin:0; color:var(--muted); font-size:.82rem; line-height:1.7; }
+    #status { margin-top:20px; color:var(--accent); font-size:.78rem; }
+    #status.denied { color:var(--danger); }
+    .dots::after {
+      content:'';
+      animation:dots 1.5s steps(4,end) infinite;
+    }
+    @keyframes dots {
+      0% { content:''; }
+      25% { content:'.'; }
+      50% { content:'..'; }
+      75%,100% { content:'...'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="lock">🔒</div>
+    <h1>Approval required</h1>
+    <p>ParTab is in Secured mode. Approve this device from the main Windows PC to continue.</p>
+    <div id="status">Waiting for approval<span class="dots"></span></div>
+  </div>
+
+  <script>
+    const requestId = '__REQUEST_ID__';
+    const statusEl = document.getElementById('status');
+    let finished = false;
+    let claiming = false;
+
+    function parseEventData(event) {
+      try {
+        return JSON.parse(event.data || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    async function claimApproval() {
+      if (claiming || finished) return;
+      claiming = true;
+
+      try {
+        const response = await fetch('/api/access/status?id=' + encodeURIComponent(requestId), {
+          cache: 'no-store'
+        });
+        const data = await response.json();
+
+        if (data.status === 'approved' || data.status === 'open') {
+          finished = true;
+          statusEl.textContent = 'Approved. Connecting…';
+          setTimeout(() => location.replace('/'), 150);
+          return;
+        }
+
+        if (data.status === 'denied') {
+          finished = true;
+          statusEl.textContent = 'Access denied by the host PC.';
+          statusEl.className = 'denied';
+          return;
+        }
+      } catch (e) {}
+
+      claiming = false;
+    }
+
+    function handleAccessStatus(status) {
+      if (finished) return;
+
+      if (status === 'approved' || status === 'open') {
+        claimApproval();
+        return;
+      }
+
+      if (status === 'denied') {
+        finished = true;
+        statusEl.textContent = 'Access denied by the host PC.';
+        statusEl.className = 'denied';
+        return;
+      }
+
+      if (status === 'expired' || status === 'invalid') {
+        location.reload();
+      }
+    }
+
+    const events = new EventSource('/events/access?id=' + encodeURIComponent(requestId));
+
+    events.addEventListener('access_status', event => {
+      handleAccessStatus(parseEventData(event).status);
+    });
+
+    events.addEventListener('access_decision', event => {
+      handleAccessStatus(parseEventData(event).status);
+    });
+
+    events.addEventListener('security_changed', event => {
+      const data = parseEventData(event);
+      if (!data.secure) {
+        finished = false;
+        claiming = false;
+        statusEl.className = '';
+        statusEl.textContent = 'Insecure mode enabled. Connecting…';
+        claimApproval();
+      }
+    });
+
+    events.addEventListener('server_shutdown', () => {
+      finished = true;
+      events.close();
+
+      try {
+        window.close();
+      } catch (e) {}
+
+      setTimeout(() => {
+        if (!window.closed) {
+          statusEl.textContent = 'ParTab was shut down by the host PC. You can close this tab.';
+          statusEl.className = 'denied';
+        }
+      }, 250);
+    });
+
+    events.onerror = () => {};
+  </script>
+</body>
+</html>
