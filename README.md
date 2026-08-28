@@ -434,6 +434,14 @@ Host tab closed
 ~90 seconds
       ↓
 ParTab shuts down automatically
+```
+
+This prevents the ParTab server from accidentally staying active in the background if you forget to use the **Exit** button.
+
+> The automatic shutdown is based on the main host PC browser connection. Connected phones or tablets do not keep the server alive after the host tab has been closed.
+
+---
+
 # 🌐 Browser Support
 
 Designed for modern browsers including:
@@ -648,7 +656,6 @@ dist/
 ```
 
 For normal users, `Partab-v2.0.0.exe` is the only application file they need to run.
-
 
 ## Publish a GitHub Release automatically
 
