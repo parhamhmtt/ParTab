@@ -416,6 +416,24 @@ ParTab also watches the host browser connection. If the host tab disappears and 
 
 ---
 
+## 💤 Automatic Shutdown
+
+ParTab also includes an automatic shutdown mechanism.
+
+The host browser keeps the server alive while the main ParTab tab is open.
+
+If the host tab is closed or disconnected and does not reconnect, ParTab automatically shuts down after roughly **90 seconds**.
+
+```text
+Host tab open
+      ↓
+Server stays running
+
+Host tab closed
+      ↓
+~90 seconds
+      ↓
+ParTab shuts down automatically
 # 🌐 Browser Support
 
 Designed for modern browsers including:
