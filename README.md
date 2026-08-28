@@ -51,7 +51,7 @@ After downloading:
 - 🔔 Non-blocking Requests notification center on the host PC
 - 🔓 Switching back to `INSECURE` automatically allows waiting devices to continue
 - 🛑 Host-only Exit button for shutting down ParTab and disconnecting clients
-- 💤 Automatic shutdown after the host browser tab is no longer active
+- 💤 Automatic server shutdown when the host tab is closed
 - 🌐 Local-network operation — transferred files are not uploaded to a cloud service
 - 🧱 Modular Python architecture
 
